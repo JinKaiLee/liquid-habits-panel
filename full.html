@@ -205,6 +205,7 @@ form.add input::placeholder{color:var(--muted)}
       <button class="pill" id="btnTheme">Theme: Bloom</button>
       <button class="pill" id="btnGrad" aria-pressed="true">Gradient</button>
       <button class="pill" id="btnGlass" aria-pressed="true">Glass</button>
+      <button class="pill" id="btnSound" aria-pressed="true">Sound: On</button>
     </div>
   </header>
 
@@ -296,6 +297,51 @@ form.add input::placeholder{color:var(--muted)}
   }
   function e2(t){return !t.classList.contains("toast")}
 
+  /* ---- water sounds (made on the fly with Web Audio, no files) ---- */
+  const SFX=(()=>{
+    let ac=null, muted=false;
+    try{muted=localStorage.getItem("lh-sound")==="off"}catch(e){}
+    function ctx(){ if(!ac){ const A=window.AudioContext||window.webkitAudioContext; if(!A) return null; ac=new A() } if(ac.state==="suspended") ac.resume(); return ac }
+    function noiseBuf(a,sec){ const b=a.createBuffer(1,Math.floor(a.sampleRate*sec),a.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; return b }
+    // one water droplet: a quick upward "bloop" with a tiny echo drop
+    function drop(t,base,vol){
+      const a=ac, o=a.createOscillator(), g=a.createGain();
+      o.type="sine"; o.frequency.setValueAtTime(base,t); o.frequency.exponentialRampToValueAtTime(base*2.6,t+0.07);
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.006); g.gain.exponentialRampToValueAtTime(0.0001,t+0.16);
+      o.connect(g).connect(a.destination); o.start(t); o.stop(t+0.18);
+      const o2=a.createOscillator(), g2=a.createGain();
+      o2.type="sine"; o2.frequency.setValueAtTime(base*1.9,t+0.09); o2.frequency.exponentialRampToValueAtTime(base*3.4,t+0.13);
+      g2.gain.setValueAtTime(0.0001,t+0.09); g2.gain.exponentialRampToValueAtTime(vol*0.35,t+0.095); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.19);
+      o2.connect(g2).connect(a.destination); o2.start(t+0.09); o2.stop(t+0.2);
+    }
+    // one gulp: low throaty pitch drop + a splash of filtered water noise
+    function gulp(t,pitch,vol){
+      const a=ac, o=a.createOscillator(), g=a.createGain(), lp=a.createBiquadFilter();
+      o.type="triangle"; o.frequency.setValueAtTime(pitch,t); o.frequency.exponentialRampToValueAtTime(pitch*0.55,t+0.12);
+      lp.type="lowpass"; lp.frequency.value=900;
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t+0.14);
+      o.connect(lp).connect(g).connect(a.destination); o.start(t); o.stop(t+0.16);
+      const n=a.createBufferSource(), bp=a.createBiquadFilter(), gn=a.createGain();
+      n.buffer=noiseBuf(a,0.12); bp.type="bandpass"; bp.frequency.setValueAtTime(pitch*3,t); bp.frequency.exponentialRampToValueAtTime(pitch*1.6,t+0.1); bp.Q.value=4;
+      gn.gain.setValueAtTime(0.0001,t); gn.gain.exponentialRampToValueAtTime(vol*0.5,t+0.01); gn.gain.exponentialRampToValueAtTime(0.0001,t+0.1);
+      n.connect(bp).connect(gn).connect(a.destination); n.start(t); n.stop(t+0.12);
+    }
+    return {
+      get muted(){return muted},
+      toggle(){ muted=!muted; try{localStorage.setItem("lh-sound",muted?"off":"on")}catch(e){} if(!muted){ if(ctx()) drop(ac.currentTime+0.02,520,0.28) } return muted },
+      // ticked a box: droplet. Unticked: a softer, lower droplet.
+      tick(on){ if(muted||!ctx()) return; const t=ac.currentTime+0.01; on?drop(t,560,0.32):drop(t,300,0.14) },
+      // the graph bar grew: chug-chug-chug; more gulps the fuller the day gets (1 to 4)
+      chug(level){ if(muted||!ctx()) return; const n=Math.max(1,Math.min(4,Math.round(1+level*3))); let t=ac.currentTime+0.2;
+        for(let i=0;i<n;i++){ gulp(t,150+i*18+Math.random()*12,0.3); t+=0.13+Math.random()*0.03 } },
+      // every habit done for the day: a little rising run of droplets
+      full(){ if(muted||!ctx()) return; let t=ac.currentTime+0.75; [520,660,820,1040].forEach((f,i)=>drop(t+i*0.09,f,0.26)) }
+    };
+  })();
+  function playFor(h,d){const on=!!(checks[h]&&checks[h][d]); SFX.tick(on);
+    if(on){const lv=habits.filter(x=>checks[x.id]&&checks[x.id][d]).length/(habits.length||1); SFX.chug(lv); if(lv>=1) SFX.full()}}
+  function soundLabel(){const b=$("btnSound"); b.textContent=SFX.muted?"Sound: Off":"Sound: On"; b.classList.toggle("on",!SFX.muted); b.setAttribute("aria-pressed",!SFX.muted)}
+  $("btnSound").onclick=()=>{SFX.toggle(); soundLabel()}; soundLabel();
   /* ---- rendering ---- */
   const CHECK='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function streakOf(h){let s=0;for(let d=lastDay();d>=1;d--){if(on(h,d))s++;else break}return s}
@@ -360,7 +406,7 @@ form.add input::placeholder{color:var(--muted)}
     const c=e.target.closest(".cell");
     if(c&&!c.disabled){const h=c.dataset.h,d=+c.dataset.d;checks[h]=Object.assign({},checks[h]);
       const v=!checks[h][d]; if(v) checks[h][d]=true; else delete checks[h][d];
-      render(); writeCell(h,d,v); const again=document.querySelector(`.cell[data-h="${h}"][data-d="${d}"]`); again&&again.focus()}
+      playFor(h,d); render(); writeCell(h,d,v); const again=document.querySelector(`.cell[data-h="${h}"][data-d="${d}"]`); again&&again.focus()}
   });
   $("prev").onclick=()=>{view.m--; if(view.m<0){view.m=11;view.y--} openMonth()};
   $("next").onclick=()=>{if(isCurrent())return; view.m++; if(view.m>11){view.m=0;view.y++} openMonth()};
