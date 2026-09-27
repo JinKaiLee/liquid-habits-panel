@@ -5,3 +5,4 @@ and a pointer-following lens. Ticks are written straight into the `tblTracker` t
 
 - `taskpane.html` is the panel (hosted with GitHub Pages).
 - `manifest.xml` is what you add to Excel (Add-ins > My Add-ins > Upload My Add-in).
+- `full.html` is the whole tracker, shown as a box on its own worksheet (`manifest-full.xml`).

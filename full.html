@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Liquid Habits</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#070a1f; --b1:#3b3bff; --b2:#e05ae0; --b3:#1c2a8a;
+  --accent:#7d73ff; --accent2:#eb5adc; --accentText:#b9b2ff;
+  --text:#f2f1ff; --muted:rgba(242,241,255,.62); --faint:rgba(242,241,255,.14);
+  --panel:rgba(255,255,255,.075); --panelSolid:#161a3a; --edge:rgba(255,255,255,.22);
+  --fill: var(--accent);
+  --display:"Sora", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+}
+body[data-theme="windows"]{--bg:#0a111e;--b1:#0067c0;--b2:#4cc2ff;--b3:#12305a;--accent:#4cc2ff;--accent2:#0078d4;--accentText:#9ddcff;--panelSolid:#152236;}
+body[data-theme="glow"]{--bg:#12081a;--b1:#7a1fa2;--b2:#ff50c8;--b3:#3a1454;--accent:#c864ff;--accent2:#ff50c8;--accentText:#e3b3ff;--panelSolid:#23142f;}
+body[data-theme="flow"]{--bg:#170a0e;--b1:#c8284e;--b2:#ffaa5a;--b3:#5e1226;--accent:#ff5a78;--accent2:#ffaa5a;--accentText:#ffb7c5;--panelSolid:#2a151b;}
+body[data-theme="bloom"]{--bg:#070a1f;--b1:#3b3bff;--b2:#e05ae0;--b3:#1c2a8a;--accent:#7d73ff;--accent2:#eb5adc;--accentText:#b9b2ff;--panelSolid:#161a3a;}
+body.grad{--fill:linear-gradient(135deg,var(--accent),var(--accent2));}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text); font-family:var(--body); font-size:15px;
+  padding-inline:16px; padding-block:20px 48px; overflow-x:hidden; position:relative;
+  transition:background .6s ease;
+}
+/* ambient wallpaper */
+.aurora{position:fixed; inset:-20vmax; z-index:0; pointer-events:none; filter:blur(60px) saturate(130%); opacity:.9}
+.aurora i{position:absolute; border-radius:50%; mix-blend-mode:screen; transition:background .8s ease}
+.aurora i:nth-child(1){width:60vmax;height:60vmax;left:10%;top:15%;background:radial-gradient(circle,var(--b1) 0%,transparent 65%);animation:drift1 26s ease-in-out infinite alternate}
+.aurora i:nth-child(2){width:50vmax;height:50vmax;right:5%;bottom:0;background:radial-gradient(circle,var(--b2) 0%,transparent 62%);animation:drift2 32s ease-in-out infinite alternate}
+.aurora i:nth-child(3){width:45vmax;height:45vmax;left:40%;top:-10%;background:radial-gradient(circle,var(--b3) 0%,transparent 65%);animation:drift3 38s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(12vmax,8vmax) scale(1.15)}}
+@keyframes drift2{to{transform:translate(-14vmax,-6vmax) scale(.9)}}
+@keyframes drift3{to{transform:translate(-6vmax,14vmax) scale(1.1)}}
+
+.wrap{position:relative; z-index:1; max-width:1240px; margin:0 auto; display:grid; gap:18px}
+
+/* glass */
+.glass{
+  position:relative; border-radius:22px; background:var(--panel);
+  border:1px solid var(--edge);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 -1px 0 rgba(255,255,255,.05), 0 18px 50px rgba(0,0,0,.35);
+  backdrop-filter: blur(22px) saturate(170%); -webkit-backdrop-filter: blur(22px) saturate(170%);
+  overflow:hidden; isolation:isolate;
+}
+.glass::before{ /* moving specular sheen that follows the pointer */
+  content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; border-radius:inherit;
+  background:
+    radial-gradient(420px circle at var(--mx,30%) var(--my,-20%), rgba(255,255,255,.18), transparent 45%),
+    linear-gradient(180deg, rgba(255,255,255,.10), transparent 38%);
+  transition:opacity .3s;
+}
+.glass::after{ /* bright rim that lights up near the pointer */
+  content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none;
+  background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.75), transparent 60%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude;
+  opacity:0; transition:opacity .35s;
+}
+.glass:hover::after{opacity:1}
+body.noglass .glass{background:var(--panelSolid); backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:0 10px 30px rgba(0,0,0,.35)}
+body.noglass .glass::before, body.noglass .glass::after{display:none}
+body.noglass .aurora{opacity:.35}
+
+/* liquid lens that follows the cursor */
+#lens{
+  position:fixed; left:0; top:0; width:128px; height:128px; margin:-64px 0 0 -64px; border-radius:50%;
+  pointer-events:none; z-index:50; opacity:0; transform:scale(.6);
+  transition:opacity .25s ease, transform .35s cubic-bezier(.2,.9,.3,1.4);
+  backdrop-filter: blur(1.5px) saturate(190%) brightness(1.18) contrast(1.05);
+  -webkit-backdrop-filter: blur(1.5px) saturate(190%) brightness(1.18) contrast(1.05);
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.35), rgba(255,255,255,.04) 45%, rgba(255,255,255,0) 60%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35), inset 6px 8px 18px rgba(255,255,255,.18), inset -8px -10px 22px rgba(0,0,0,.22), 0 10px 30px rgba(0,0,0,.25);
+}
+#lens.on{opacity:1; transform:scale(1)}
+body.noglass #lens{display:none}
+@media (hover:none){#lens{display:none}}
+
+/* header */
+header.bar{display:flex; flex-wrap:wrap; align-items:center; gap:14px 18px; padding:18px 22px}
+.brand{display:flex; flex-direction:column; gap:2px; margin-right:auto}
+.brand h1{font-family:var(--display); font-weight:700; font-size:clamp(24px,3.2vw,34px); letter-spacing:-.02em; margin:0; text-wrap:balance}
+.brand h1 span{background:var(--fill); -webkit-background-clip:text; background-clip:text; color:transparent}
+.brand small{color:var(--muted); font-size:13px; letter-spacing:.06em; text-transform:uppercase}
+.monthnav{display:flex; align-items:center; gap:8px}
+.monthnav strong{font-family:var(--display); font-weight:600; min-width:9.5em; text-align:center; font-size:16px}
+.controls{display:flex; flex-wrap:wrap; gap:8px}
+.pill{
+  appearance:none; border:1px solid var(--edge); color:var(--text); background:rgba(255,255,255,.08);
+  font:600 13px/1 var(--body); padding:10px 14px; border-radius:999px; cursor:pointer; position:relative; overflow:hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  transition: transform .2s cubic-bezier(.2,.9,.3,1.4), background .2s;
+}
+.pill:hover{transform:translateY(-1px) scale(1.03); background:rgba(255,255,255,.14)}
+.pill:active{transform:scale(.97)}
+.pill.on{background:var(--fill); color:#0b0b14; border-color:transparent}
+.pill.icon{width:38px; height:38px; padding:0; display:grid; place-items:center; font-size:16px}
+.pill:focus-visible, .cell:focus-visible, .x:focus-visible{outline:2px solid var(--accentText); outline-offset:2px}
+.pill:disabled{opacity:.35; cursor:default; transform:none}
+
+/* stats */
+.stats{display:grid; grid-template-columns: minmax(230px,1fr) minmax(200px,.8fr) minmax(320px,2.2fr); gap:18px}
+@media (max-width:900px){.stats{grid-template-columns:1fr 1fr}.chartcard{grid-column:1/-1}}
+@media (max-width:560px){.stats{grid-template-columns:1fr}}
+.card{padding:18px 20px}
+.card h2{font:600 12px/1 var(--body); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 14px}
+dl.facts{display:grid; grid-template-columns:auto 1fr; gap:9px 14px; margin:0; font-size:14px}
+dl.facts dt{color:var(--accentText); font-weight:600}
+dl.facts dd{margin:0; font-variant-numeric:tabular-nums}
+.ringwrap{display:grid; place-items:center; gap:6px}
+.ring{position:relative; width:140px; height:140px}
+.ring svg{width:100%; height:100%; transform:rotate(-90deg)}
+.ring .track{stroke:rgba(255,255,255,.1)}
+.ring .val{stroke:url(#ringGrad); transition:stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1)}
+body:not(.grad) .ring .val{stroke:var(--accent)}
+.ring .pct{position:absolute; inset:0; display:grid; place-items:center; font:700 30px/1 var(--display); font-variant-numeric:tabular-nums}
+.ringwrap p{margin:0; color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums}
+.chart{width:100%; height:150px; display:block}
+.chart text{fill:var(--muted); font:500 9px var(--body)}
+.chart .lbl{fill:var(--accentText); font-weight:700}
+
+/* habit grid */
+.gridcard{padding:6px 0 10px}
+.gridhead{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; padding:14px 20px 8px}
+.gridhead h2{margin:0}
+.scroll{overflow-x:auto; padding:0 10px 6px}
+table{border-collapse:separate; border-spacing:0; width:max-content; min-width:100%}
+th,td{padding:0; text-align:center; font-variant-numeric:tabular-nums}
+thead th{font:600 11px/1.3 var(--body); color:var(--muted); padding:6px 0 10px; position:sticky; top:0}
+thead th.day{width:30px}
+thead th.day b{display:block; color:var(--accentText); font-size:12px}
+thead th.today b, thead th.today{color:#fff}
+th.hname, td.hname{text-align:left; padding:0 14px 0 12px; position:sticky; left:0; z-index:2}
+td.hname{background:linear-gradient(90deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 85%, transparent)}
+body.noglass td.hname{background:var(--panelSolid)}
+.hname .n{font-weight:600; font-size:14px; white-space:nowrap}
+.hname .m{color:var(--muted); font-size:12px; white-space:nowrap}
+td.meta{color:var(--muted); font-size:12.5px; padding:0 10px; white-space:nowrap}
+td.num{font-weight:700; padding:0 10px}
+tbody tr{transition:background .25s}
+tbody tr:hover{background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 85%)}
+tbody tr:hover td.hname .n{color:var(--accentText)}
+td.daycell{padding:4px 2px}
+td.todaycol{background:color-mix(in srgb, var(--accent) 14%, transparent)}
+.cell{
+  width:24px; height:24px; border-radius:8px; border:1.5px solid rgba(255,255,255,.28); background:rgba(255,255,255,.04);
+  cursor:pointer; display:grid; place-items:center; padding:0; color:#0b0b14;
+  transition:transform .25s cubic-bezier(.2,.9,.3,1.5), background .25s, border-color .25s, box-shadow .25s;
+}
+.cell:hover{transform:scale(1.18); border-color:rgba(255,255,255,.6); box-shadow:0 0 14px color-mix(in srgb, var(--accent) 55%, transparent)}
+.cell[aria-checked="true"]{background:var(--fill); border-color:transparent; box-shadow:0 0 16px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 1px 0 rgba(255,255,255,.55)}
+.cell svg{width:14px; height:14px; opacity:0; transform:scale(.4); transition:.25s cubic-bezier(.2,.9,.3,1.5)}
+.cell[aria-checked="true"] svg{opacity:1; transform:scale(1)}
+.cell:disabled{opacity:.25; cursor:default; transform:none; box-shadow:none}
+tfoot td{padding-top:8px; font-size:11px; color:var(--muted)}
+tfoot td.hname{font-weight:600; color:var(--text); font-size:13px}
+.x{appearance:none; background:none; border:0; color:var(--muted); cursor:pointer; font-size:15px; padding:2px 6px; border-radius:6px; opacity:0; transition:opacity .2s}
+tbody tr:hover .x, .x:focus-visible{opacity:1}
+.x:hover{color:#fff; background:rgba(255,255,255,.1)}
+
+/* add habit */
+form.add{display:flex; flex-wrap:wrap; gap:8px; padding:10px 20px 14px}
+form.add input{flex:1 1 150px; min-width:0; background:rgba(255,255,255,.07); border:1px solid var(--edge); color:var(--text); border-radius:12px; padding:10px 12px; font:500 14px var(--body)}
+form.add input::placeholder{color:var(--muted)}
+.note{color:var(--muted); font-size:12.5px; padding:0 20px 8px; margin:0}
+.toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px); opacity:0; z-index:60; padding:10px 16px; border-radius:14px; font-size:13px; transition:.3s}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+.copydlg{color:var(--text); border:1px solid var(--edge); border-radius:20px; padding:22px; max-width:min(460px,calc(100vw - 32px)); background:var(--panelSolid)}
+.copydlg::backdrop{background:rgba(0,0,0,.5)}
+.copydlg h2{margin:0 0 8px; font-size:16px}
+.copydlg p{margin:0 0 12px; color:var(--muted); font-size:14px; line-height:1.45}
+.copydlg textarea{width:100%; box-sizing:border-box; background:rgba(0,0,0,.3); color:var(--text); border:1px solid var(--edge); border-radius:10px; padding:10px; font:12px/1.4 ui-monospace,Consolas,monospace; margin-bottom:12px}
+@media (prefers-reduced-motion:reduce){.aurora i{animation:none}*{transition-duration:.01ms!important}}
+</style>
+
+</head>
+<body data-theme="bloom">
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="lens" aria-hidden="true"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent2)"/></linearGradient></defs>
+</svg>
+
+<main class="wrap">
+  <header class="bar glass">
+    <div class="brand">
+      <small>Daily habits</small>
+      <h1>Habit <span>Tracker</span></h1>
+    </div>
+    <div class="monthnav">
+      <button class="pill icon" id="prev" aria-label="Previous month">&#8249;</button>
+      <strong id="monthLabel">September 2026</strong>
+      <button class="pill icon" id="next" aria-label="Next month">&#8250;</button>
+    </div>
+    <div class="controls">
+      <button class="pill" id="btnTheme">Theme: Bloom</button>
+      <button class="pill" id="btnGrad" aria-pressed="true">Gradient</button>
+      <button class="pill" id="btnGlass" aria-pressed="true">Glass</button>
+    </div>
+  </header>
+
+  <section class="stats">
+    <div class="card glass">
+      <h2>This month</h2>
+      <dl class="facts">
+        <dt>Completed today</dt><dd id="fToday">0 of 0</dd>
+        <dt>Most completed</dt><dd id="fMost">None yet</dd>
+        <dt>Needs attention</dt><dd id="fNeed">None yet</dd>
+        <dt>Best streak</dt><dd id="fStreak">None yet</dd>
+        <dt>Best day</dt><dd id="fBest">None yet</dd>
+      </dl>
+    </div>
+    <div class="card glass ringwrap">
+      <h2 id="ringTitle">Progress today</h2>
+      <div class="ring">
+        <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="50" fill="none" stroke-width="12"/><circle class="val" id="ringVal" cx="60" cy="60" r="50" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16"/></svg>
+        <div class="pct" id="ringPct">0%</div>
+      </div>
+      <p id="ringSub">0 of 0 habits</p>
+    </div>
+    <div class="card glass chartcard">
+      <h2>Daily completion</h2>
+      <svg class="chart" id="chart" viewBox="0 0 620 150" preserveAspectRatio="none" role="img" aria-label="Daily completion chart"></svg>
+    </div>
+  </section>
+
+  <section class="glass gridcard">
+    <div class="gridhead"><h2 class="card" style="padding:0;font:600 12px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Habits</h2></div>
+    <div class="scroll"><table id="grid"></table></div>
+    
+    <p class="note" id="saveNote">Ticks go straight into your Tracker sheet. To add or rename habits, edit the Daily Habits column there. Use the arrows to look at archived months.</p>
+  </section>
+</main>
+<div class="toast glass" id="toast" role="status"></div>
+
+
+<script>
+(function(){
+  const THEMES=[["windows","Windows Dark"],["glow","Glow"],["flow","Flow"],["bloom","Bloom"]];
+  const DEFAULT_HABITS=[
+    {id:"h1",name:"Drink water",cat:"Health",goal:"8 glasses"},{id:"h2",name:"Exercise",cat:"Fitness",goal:"30 minutes"},
+    {id:"h3",name:"Read",cat:"Growth",goal:"2 chapters"},{id:"h4",name:"Meditate",cat:"Mind",goal:"5 minutes"},
+    {id:"h5",name:"No junk food",cat:"Health",goal:""},{id:"h6",name:"No doomscrolling",cat:"Mind",goal:""},
+    {id:"h7",name:"Deep work",cat:"Work",goal:"2 hours"},{id:"h8",name:"Stretch",cat:"Fitness",goal:"10 minutes"},
+    {id:"h9",name:"Draw",cat:"Creative",goal:"30+ minutes"},{id:"h10",name:"Edit",cat:"Creative",goal:"30+ minutes"},
+    {id:"h11",name:"Roblox Studio",cat:"Projects",goal:"2 hours"}];
+  const $=id=>document.getElementById(id);
+  const today=new Date(); const todayKey=keyOf(today.getFullYear(),today.getMonth());
+  let view={y:today.getFullYear(),m:today.getMonth()};
+  let habits=[], checks={}; // checks[habitId] = {day:true}
+  let writing=0, readonly=false, excelTheme="bloom", loadSeq=0;
+  const DAY0=5; const THEME_KEY={"Windows Dark":"windows","Glow":"glow","Flow":"flow","Bloom":"bloom"};
+
+  function keyOf(y,m){return y+"-"+String(m+1).padStart(2,"0")}
+  function daysIn(y,m){return new Date(y,m+1,0).getDate()}
+  function isCurrent(){return keyOf(view.y,view.m)===todayKey}
+  function lastDay(){return isCurrent()?today.getDate():daysIn(view.y,view.m)}
+  function on(h,d){return !!(checks[h]&&checks[h][d])}
+  function toast(t,ms){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),ms||2200)}
+
+  /* ---- settings (per-viewer conveniences) ---- */
+  const prefs=(()=>{try{return JSON.parse(localStorage.getItem("lh-xl-prefs")||"{}")}catch(e){return{}}})();
+  function savePrefs(){try{localStorage.setItem("lh-xl-prefs",JSON.stringify(prefs))}catch(e){}}
+  function applyPrefs(){
+    const t=prefs.theme||excelTheme; document.body.dataset.theme=t;
+    document.body.classList.toggle("grad",prefs.grad!==false);
+    document.body.classList.toggle("noglass",prefs.glass===false);
+    $("btnTheme").textContent="Theme: "+THEMES.find(x=>x[0]===t)[1]+(prefs.theme?"":" (Excel)");
+    $("btnGrad").classList.toggle("on",prefs.grad!==false); $("btnGrad").setAttribute("aria-pressed",prefs.grad!==false);
+    $("btnGlass").classList.toggle("on",prefs.glass!==false); $("btnGlass").setAttribute("aria-pressed",prefs.glass!==false);
+  }
+  $("btnTheme").onclick=()=>{const i=THEMES.findIndex(x=>x[0]===(prefs.theme||excelTheme));prefs.theme=THEMES[(i+1)%THEMES.length][0];savePrefs();applyPrefs();render()};
+  $("btnGrad").onclick=()=>{prefs.grad=prefs.grad===false;savePrefs();applyPrefs()};
+  $("btnGlass").onclick=()=>{prefs.glass=prefs.glass===false;savePrefs();applyPrefs()};
+
+  /* ---- liquid pointer effects ---- */
+  const lens=$("lens"); let raf=0, px=0, py=0, target=null;
+  document.addEventListener("pointermove",e=>{
+    px=e.clientX; py=e.clientY; target=e.target.closest&&e.target.closest(".glass");
+    if(!raf) raf=requestAnimationFrame(tick);
+  },{passive:true});
+  document.addEventListener("pointerleave",()=>lens.classList.remove("on"));
+  function tick(){
+    raf=0; lens.style.transform=""; lens.style.left=px+"px"; lens.style.top=py+"px";
+    lens.classList.toggle("on",!!target && e2(target));
+    if(target){const r=target.getBoundingClientRect();target.style.setProperty("--mx",(px-r.left)+"px");target.style.setProperty("--my",(py-r.top)+"px")}
+  }
+  function e2(t){return !t.classList.contains("toast")}
+
+  /* ---- rendering ---- */
+  const CHECK='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function streakOf(h){let s=0;for(let d=lastDay();d>=1;d--){if(on(h,d))s++;else break}return s}
+  function render(){
+    const Y=view.y,M=view.m,N=daysIn(Y,M),cur=isCurrent(),tdy=today.getDate();
+    $("monthLabel").textContent=new Date(Y,M,1).toLocaleString(undefined,{month:"long",year:"numeric"});
+    $("next").disabled=cur;
+    // table
+    const wd=d=>new Date(Y,M,d).toLocaleString(undefined,{weekday:"narrow"});
+    let h='<thead><tr><th class="hname">Habit</th><th>Goal</th><th>Streak</th><th>Total</th>';
+    for(let d=1;d<=N;d++) h+=`<th class="day${cur&&d===tdy?" today":""}">${wd(d)}<b>${d}</b></th>`;
+    h+='</tr></thead><tbody>';
+    const dayTotals=Array(N+1).fill(0);
+    habits.forEach(x=>{
+      let tot=0; let cells="";
+      for(let d=1;d<=N;d++){const c=on(x.id,d); if(c){tot++;dayTotals[d]++}
+        const fut=(cur&&d>tdy)||readonly;
+        cells+=`<td class="daycell${cur&&d===tdy?" todaycol":""}"><button class="cell" role="checkbox" aria-checked="${c}" aria-label="${esc(x.name)}, day ${d}" data-h="${x.id}" data-d="${d}"${fut?" disabled":""}>${CHECK}</button></td>`}
+      h+=`<tr><td class="hname"><div class="n">${esc(x.name)}</div><div class="m">${esc(x.cat||"")}</div></td><td class="meta">${esc(x.goal||"")}</td><td class="num">${streakOf(x.id)}</td><td class="num">${tot}</td>${cells}</tr>`;
+    });
+    h+='</tbody><tfoot><tr><td class="hname">Done</td><td></td><td></td><td></td>';
+    for(let d=1;d<=N;d++) h+=`<td>${habits.length?Math.round(dayTotals[d]/habits.length*100)+"%":""}</td>`;
+    h+='</tr></tfoot>';
+    $("grid").innerHTML=h;
+    // stats
+    const n=habits.length, focusDay=cur?tdy:N;
+    const doneFocus=habits.filter(x=>on(x.id,focusDay)).length;
+    $("ringTitle").textContent=cur?"Progress today":"Last day of month";
+    const pct=n?Math.round(doneFocus/n*100):0;
+    $("ringPct").textContent=pct+"%"; $("ringSub").textContent=doneFocus+" of "+n+" habits";
+    $("ringVal").style.strokeDashoffset=(314.16*(1-pct/100)).toFixed(1); $("ringVal").style.opacity=pct?1:0;
+    $("fToday").textContent=doneFocus+" of "+n;
+    const totals=habits.map(x=>({x,t:Object.keys(checks[x.id]||{}).filter(k=>checks[x.id][k]).length}));
+    const any=totals.some(o=>o.t>0);
+    const most=totals.slice().sort((a,b)=>b.t-a.t)[0], least=totals.slice().sort((a,b)=>a.t-b.t)[0];
+    $("fMost").textContent=any?most.x.name+" ("+most.t+")":"None yet";
+    $("fNeed").textContent=any?least.x.name+" ("+least.t+")":"None yet";
+    const bs=habits.map(x=>({x,s:streakOf(x.id)})).sort((a,b)=>b.s-a.s)[0];
+    $("fStreak").textContent=bs&&bs.s>0?bs.x.name+", "+bs.s+" day"+(bs.s>1?"s":""):"None yet";
+    let bd=0,bv=0; for(let d=1;d<=N;d++) if(dayTotals[d]>bv){bv=dayTotals[d];bd=d}
+    $("fBest").textContent=bd?new Date(Y,M,bd).toLocaleString(undefined,{weekday:"long"})+" "+bd+" ("+bv+"/"+n+")":"None yet";
+    drawChart(N,dayTotals,n,cur?tdy:0);
+  }
+  function drawChart(N,tot,n,tdy){
+    const W=620,H=150,top=16,bot=18,left=4,gap=4,bw=(W-left*2)/N-gap;
+    let s=`<defs><linearGradient id="barGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--accent2)"/><stop offset="1" stop-color="var(--accent)"/></linearGradient></defs>`;
+    for(let v of [.5,1]){const y=top+(H-top-bot)*(1-v);s+=`<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.08)"/>`}
+    const fill=document.body.classList.contains("grad")?"url(#barGrad)":"var(--accent)";
+    for(let d=1;d<=N;d++){
+      const p=n?tot[d]/n:0, x=left+(d-1)*(bw+gap)+gap/2, h=(H-top-bot)*p, y=H-bot-h;
+      s+=`<rect x="${x.toFixed(1)}" y="${(H-bot-1.5).toFixed(1)}" width="${bw.toFixed(1)}" height="1.5" rx="1" fill="rgba(255,255,255,.12)"/>`;
+      if(p>0){s+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${fill}" opacity="${d===tdy?1:.85}"/>`;
+        s+=`<text class="lbl" x="${(x+bw/2).toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="middle">${Math.round(p*100)}%</text>`}
+      if(d===1||d%5===0||d===N) s+=`<text x="${(x+bw/2).toFixed(1)}" y="${H-4}" text-anchor="middle">${d}</text>`;
+    }
+    $("chart").innerHTML=s;
+  }
+  function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+  /* ---- interactions ---- */
+  $("grid").addEventListener("click",e=>{
+    const c=e.target.closest(".cell");
+    if(c&&!c.disabled){const h=c.dataset.h,d=+c.dataset.d;checks[h]=Object.assign({},checks[h]);
+      const v=!checks[h][d]; if(v) checks[h][d]=true; else delete checks[h][d];
+      render(); writeCell(h,d,v); const again=document.querySelector(`.cell[data-h="${h}"][data-d="${d}"]`); again&&again.focus()}
+  });
+  $("prev").onclick=()=>{view.m--; if(view.m<0){view.m=11;view.y--} openMonth()};
+  $("next").onclick=()=>{if(isCurrent())return; view.m++; if(view.m>11){view.m=0;view.y++} openMonth()};
+
+  /* ---- Excel: read and write the real Tracker table ---- */
+  function sheetFor(){return isCurrent()?"Tracker":new Date(view.y,view.m,1).toLocaleString("en-US",{month:"long",year:"numeric"})}
+  async function openMonth(){
+    const seq=++loadSeq; const name=sheetFor();
+    try{
+      await Excel.run(async ctx=>{
+        const ws=ctx.workbook.worksheets.getItemOrNullObject(name); await ctx.sync();
+        if(ws.isNullObject){ if(seq!==loadSeq) return; habits=[];checks={};readonly=true;render();
+          $("saveNote").textContent="There's no archived tab for "+name+" in this workbook."; return }
+        const tables=ws.tables; tables.load("items/name"); await ctx.sync();
+        const tb=tables.items.find(x=>x.name==="tblTracker")||tables.items[0];
+        if(!tb){ if(seq!==loadSeq) return; habits=[];checks={};readonly=true;render(); $("saveNote").textContent="No habit table found on "+name+"."; return }
+        const body=tb.getDataBodyRange(); body.load("values");
+        const nm=ctx.workbook.names.getItemOrNullObject("TrackerTheme"); nm.load("formula");
+        await ctx.sync();
+        if(seq!==loadSeq) return;
+        if(!nm.isNullObject){excelTheme=THEME_KEY[String(nm.formula).replace(/^=|"/g,"")]||excelTheme; applyPrefs()}
+        habits=[];checks={};
+        body.values.forEach((r,i)=>{ if(String(r[0]).trim()==="") return; const id="r"+i;
+          habits.push({id,row:i,name:String(r[0]),cat:String(r[1]||""),goal:String(r[2]||"")});
+          const o={}; for(let d=1;d<=31;d++){const v=r[DAY0+d-1]; if(v===true||v==="TRUE") o[d]=true} checks[id]=o });
+        readonly=!isCurrent();
+        $("saveNote").textContent=readonly?"This is an archived month, shown read-only. Ticks here are from the "+name+" tab.":"Ticks go straight into your Tracker sheet. To add or rename habits, edit the Daily Habits column there. Use the arrows to look at archived months.";
+        render();
+      });
+    }catch(e){ $("saveNote").textContent="Couldn't read the sheet: "+(e&&e.message||e) }
+  }
+  async function writeCell(id,d,v){
+    const x=habits.find(h=>h.id===id); if(!x||readonly) return;
+    writing++;
+    try{ await Excel.run(async ctx=>{
+      ctx.workbook.worksheets.getItem("Tracker").tables.getItem("tblTracker").getDataBodyRange().getCell(x.row,DAY0+d-1).values=[[v]];
+      await ctx.sync() }) }
+    catch(e){ checks[id]=Object.assign({},checks[id]); if(v) delete checks[id][d]; else checks[id][d]=true; render(); toast("Couldn't change the sheet: "+(e&&e.message||e),4000) }
+    setTimeout(()=>{writing--},600);
+  }
+  applyPrefs(); render();
+  let refreshT=0;
+  Office.onReady(async info=>{
+    if(info.host!==Office.HostType.Excel){ $("saveNote").textContent="Open this inside Excel."; return }
+    await openMonth();
+    try{ await Excel.run(async ctx=>{
+      ctx.workbook.worksheets.getItem("Tracker").onChanged.add(()=>{ if(writing||!isCurrent()) return; clearTimeout(refreshT); refreshT=setTimeout(openMonth,250) });
+      await ctx.sync() }) }catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
