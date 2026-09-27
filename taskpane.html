@@ -121,24 +121,26 @@ header small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
       const a=ac, o=a.createOscillator(), g=a.createGain();
       o.type="sine"; o.frequency.setValueAtTime(base,t); o.frequency.exponentialRampToValueAtTime(base*2.6,t+0.07);
       g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.006); g.gain.exponentialRampToValueAtTime(0.0001,t+0.16);
-      o.connect(g).connect(a.destination); o.start(t); o.stop(t+0.18);
+      o.connect(g).connect(out()); o.start(t); o.stop(t+0.18);
       const o2=a.createOscillator(), g2=a.createGain();
       o2.type="sine"; o2.frequency.setValueAtTime(base*1.9,t+0.09); o2.frequency.exponentialRampToValueAtTime(base*3.4,t+0.13);
       g2.gain.setValueAtTime(0.0001,t+0.09); g2.gain.exponentialRampToValueAtTime(vol*0.35,t+0.095); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.19);
-      o2.connect(g2).connect(a.destination); o2.start(t+0.09); o2.stop(t+0.2);
+      o2.connect(g2).connect(out()); o2.start(t+0.09); o2.stop(t+0.2);
     }
-    // one gulp: low throaty pitch drop + a splash of filtered water noise
+    // one gulp: throaty buzzy pitch drop + a splash of filtered water noise (bright enough for small speakers)
     function gulp(t,pitch,vol){
       const a=ac, o=a.createOscillator(), g=a.createGain(), lp=a.createBiquadFilter();
-      o.type="triangle"; o.frequency.setValueAtTime(pitch,t); o.frequency.exponentialRampToValueAtTime(pitch*0.55,t+0.12);
-      lp.type="lowpass"; lp.frequency.value=900;
-      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t+0.14);
-      o.connect(lp).connect(g).connect(a.destination); o.start(t); o.stop(t+0.16);
+      o.type="sawtooth"; o.frequency.setValueAtTime(pitch,t); o.frequency.exponentialRampToValueAtTime(pitch*0.55,t+0.13);
+      lp.type="lowpass"; lp.frequency.value=1800; lp.Q.value=1.2;
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.012); g.gain.exponentialRampToValueAtTime(0.0001,t+0.17);
+      o.connect(lp).connect(g).connect(out()); o.start(t); o.stop(t+0.19);
       const n=a.createBufferSource(), bp=a.createBiquadFilter(), gn=a.createGain();
-      n.buffer=noiseBuf(a,0.12); bp.type="bandpass"; bp.frequency.setValueAtTime(pitch*3,t); bp.frequency.exponentialRampToValueAtTime(pitch*1.6,t+0.1); bp.Q.value=4;
-      gn.gain.setValueAtTime(0.0001,t); gn.gain.exponentialRampToValueAtTime(vol*0.5,t+0.01); gn.gain.exponentialRampToValueAtTime(0.0001,t+0.1);
-      n.connect(bp).connect(gn).connect(a.destination); n.start(t); n.stop(t+0.12);
+      n.buffer=noiseBuf(a,0.14); bp.type="bandpass"; bp.frequency.setValueAtTime(pitch*4.5,t); bp.frequency.exponentialRampToValueAtTime(pitch*2.2,t+0.11); bp.Q.value=3;
+      gn.gain.setValueAtTime(0.0001,t); gn.gain.exponentialRampToValueAtTime(vol*0.9,t+0.008); gn.gain.exponentialRampToValueAtTime(0.0001,t+0.12);
+      n.connect(bp).connect(gn).connect(out()); n.start(t); n.stop(t+0.14);
     }
+    let comp=null;
+    function out(){ if(!comp){ comp=ac.createDynamicsCompressor(); comp.threshold.value=-10; comp.ratio.value=4; comp.connect(ac.destination) } return comp }
     return {
       get muted(){return muted},
       toggle(){ muted=!muted; try{localStorage.setItem("lh-sound",muted?"off":"on")}catch(e){} if(!muted){ if(ctx()) drop(ac.currentTime+0.02,520,0.28) } return muted },
@@ -146,7 +148,7 @@ header small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
       tick(on){ if(muted||!ctx()) return; const t=ac.currentTime+0.01; on?drop(t,560,0.32):drop(t,300,0.14) },
       // the graph bar grew: chug-chug-chug; more gulps the fuller the day gets (1 to 4)
       chug(level){ if(muted||!ctx()) return; const n=Math.max(1,Math.min(4,Math.round(1+level*3))); let t=ac.currentTime+0.2;
-        for(let i=0;i<n;i++){ gulp(t,150+i*18+Math.random()*12,0.3); t+=0.13+Math.random()*0.03 } },
+        for(let i=0;i<n;i++){ gulp(t,260+i*25+Math.random()*15,0.55); t+=0.14+Math.random()*0.03 } },
       // every habit done for the day: a little rising run of droplets
       full(){ if(muted||!ctx()) return; let t=ac.currentTime+0.75; [520,660,820,1040].forEach((f,i)=>drop(t+i*0.09,f,0.26)) }
     };
@@ -194,12 +196,15 @@ header small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
     if(busy) return; busy=true;
     const h=habits[i], d=today.getDate(), v=!h.days[d-1];
     h.days[d-1]=v; render();
-    SFX.tick(v); if(v){const lv=habits.filter(x=>x.days[d-1]).length/(habits.length||1); SFX.chug(lv); if(lv>=1) SFX.full()}
+    const lv=habits.filter(x=>x.days[d-1]).length/(habits.length||1);
     try{
       await Excel.run(async ctx=>{
         const t=ctx.workbook.worksheets.getItem("Tracker").tables.getItem("tblTracker");
         t.getDataBodyRange().getCell(h.row,DAY0+d-1).values=[[v]];
+        const act=ctx.workbook.worksheets.getActiveWorksheet(); act.load("name");
         await ctx.sync();
+        // on the Tracker sheet, Excel itself plays the sound (its Sound button), so don't double up
+        if(act.name!=="Tracker"){ SFX.tick(v); if(v){ SFX.chug(lv); if(lv>=1) SFX.full() } }
       });
     }catch(e){h.days[d-1]=!v; render(); showErr(e)}
     busy=false;
