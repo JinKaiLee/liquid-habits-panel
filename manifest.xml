@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Liquid Habits side panel for Excel. Replace https://jinkailee.github.io/liquid-habits-panel with the address where taskpane.html is hosted (must be https). -->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+           xsi:type="TaskPaneApp">
+  <Id>6f3c2a9e-4b1d-4c7a-9e55-1a2b3c4d5e6f</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Liquid Habits</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Liquid Habits"/>
+  <Description DefaultValue="A liquid-glass side panel for ticking off today's habits in Habit Tracker.xlsm."/>
+  <IconUrl DefaultValue="https://jinkailee.github.io/liquid-habits-panel/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://jinkailee.github.io/liquid-habits-panel/icon-80.png"/>
+  <SupportUrl DefaultValue="https://jinkailee.github.io/liquid-habits-panel/taskpane.html"/>
+  <Hosts><Host Name="Workbook"/></Hosts>
+  <DefaultSettings><SourceLocation DefaultValue="https://jinkailee.github.io/liquid-habits-panel/taskpane.html"/></DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Workbook">
+        <DesktopFormFactor>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="LH.Group">
+                <Label resid="LH.GroupLabel"/>
+                <Icon>
+                  <bt:Image size="16" resid="LH.Icon16"/>
+                  <bt:Image size="32" resid="LH.Icon32"/>
+                  <bt:Image size="80" resid="LH.Icon80"/>
+                </Icon>
+                <Control xsi:type="Button" id="LH.Open">
+                  <Label resid="LH.ButtonLabel"/>
+                  <Supertip><Title resid="LH.ButtonLabel"/><Description resid="LH.ButtonTip"/></Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="LH.Icon16"/>
+                    <bt:Image size="32" resid="LH.Icon32"/>
+                    <bt:Image size="80" resid="LH.Icon80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>LiquidHabits</TaskpaneId>
+                    <SourceLocation resid="LH.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="LH.Icon16" DefaultValue="https://jinkailee.github.io/liquid-habits-panel/icon-16.png"/>
+        <bt:Image id="LH.Icon32" DefaultValue="https://jinkailee.github.io/liquid-habits-panel/icon-32.png"/>
+        <bt:Image id="LH.Icon80" DefaultValue="https://jinkailee.github.io/liquid-habits-panel/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls><bt:Url id="LH.Url" DefaultValue="https://jinkailee.github.io/liquid-habits-panel/taskpane.html"/></bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="LH.GroupLabel" DefaultValue="Habits"/>
+        <bt:String id="LH.ButtonLabel" DefaultValue="Liquid Habits"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="LH.ButtonTip" DefaultValue="Open the liquid-glass habit panel."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

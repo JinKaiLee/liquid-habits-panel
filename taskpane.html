@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Liquid Habits</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#070a1f; --b1:#3b3bff; --b2:#e05ae0; --b3:#1c2a8a;
+  --accent:#7d73ff; --accent2:#eb5adc; --accentText:#b9b2ff;
+  --text:#f2f1ff; --muted:rgba(242,241,255,.62); --edge:rgba(255,255,255,.22);
+  --panel:rgba(255,255,255,.075);
+
+  --font:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+}
+body[data-theme="windows"]{--bg:#0a111e;--b1:#0067c0;--b2:#4cc2ff;--b3:#12305a;--accent:#4cc2ff;--accent2:#0078d4;--accentText:#9ddcff}
+body[data-theme="glow"]{--bg:#12081a;--b1:#7a1fa2;--b2:#ff50c8;--b3:#3a1454;--accent:#c864ff;--accent2:#ff50c8;--accentText:#e3b3ff}
+body[data-theme="flow"]{--bg:#170a0e;--b1:#c8284e;--b2:#ffaa5a;--b3:#5e1226;--accent:#ff5a78;--accent2:#ffaa5a;--accentText:#ffb7c5}
+body[data-theme="bloom"]{--bg:#070a1f;--b1:#3b3bff;--b2:#e05ae0;--b3:#1c2a8a;--accent:#7d73ff;--accent2:#eb5adc;--accentText:#b9b2ff}
+body{--fill:linear-gradient(135deg,var(--accent),var(--accent2))}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 var(--font);padding:14px 12px 28px;overflow-x:hidden;position:relative;transition:background .6s}
+.aurora{position:fixed;inset:-30vmax;z-index:0;pointer-events:none;filter:blur(50px) saturate(130%);opacity:.9}
+.aurora i{position:absolute;border-radius:50%;mix-blend-mode:screen}
+.aurora i:nth-child(1){width:90vmax;height:90vmax;left:0;top:10%;background:radial-gradient(circle,var(--b1),transparent 65%);animation:d1 24s ease-in-out infinite alternate}
+.aurora i:nth-child(2){width:80vmax;height:80vmax;right:0;bottom:0;background:radial-gradient(circle,var(--b2),transparent 62%);animation:d2 30s ease-in-out infinite alternate}
+.aurora i:nth-child(3){width:70vmax;height:70vmax;left:30%;top:-10%;background:radial-gradient(circle,var(--b3),transparent 65%);animation:d3 36s ease-in-out infinite alternate}
+@keyframes d1{to{transform:translate(20vmax,12vmax) scale(1.15)}}
+@keyframes d2{to{transform:translate(-20vmax,-10vmax) scale(.9)}}
+@keyframes d3{to{transform:translate(-10vmax,20vmax) scale(1.1)}}
+.wrap{position:relative;z-index:1;display:grid;gap:12px}
+.glass{position:relative;border-radius:18px;background:var(--panel);border:1px solid var(--edge);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 14px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);overflow:hidden;isolation:isolate}
+.glass::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;
+  background:radial-gradient(300px circle at var(--mx,30%) var(--my,-20%),rgba(255,255,255,.18),transparent 45%),linear-gradient(180deg,rgba(255,255,255,.10),transparent 40%)}
+#lens{position:fixed;left:0;top:0;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;pointer-events:none;z-index:50;opacity:0;transform:scale(.6);
+  transition:opacity .25s,transform .35s cubic-bezier(.2,.9,.3,1.4);
+  backdrop-filter:blur(1.5px) saturate(190%) brightness(1.2);-webkit-backdrop-filter:blur(1.5px) saturate(190%) brightness(1.2);
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.35),rgba(255,255,255,.04) 45%,transparent 60%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),inset 5px 7px 16px rgba(255,255,255,.18),inset -7px -9px 20px rgba(0,0,0,.22)}
+#lens.on{opacity:1;transform:scale(1)}
+header{padding:14px 16px;display:flex;align-items:center;gap:12px}
+header h1{margin:0;font:700 19px/1.1 "Segoe UI Variable Display","Segoe UI",sans-serif;letter-spacing:-.01em}
+header h1 span{background:var(--fill);-webkit-background-clip:text;background-clip:text;color:transparent}
+header small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.ring{position:relative;width:64px;height:64px;margin-left:auto;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .track{stroke:rgba(255,255,255,.12)}
+.ring .val{stroke:var(--accent);transition:stroke-dashoffset .8s cubic-bezier(.2,.9,.3,1)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:14px}
+.list{padding:6px}
+.row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;cursor:pointer;transition:background .2s}
+.row:hover{background:rgba(255,255,255,.07)}
+.row .name{flex:1;min-width:0}
+.row .name strong{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .name small{color:var(--muted);font-size:12px}
+.row .streak{font-size:12px;color:var(--accentText);white-space:nowrap}
+.tick{appearance:none;width:30px;height:30px;border-radius:10px;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.06);flex:none;display:grid;place-items:center;cursor:pointer;
+  transition:transform .25s cubic-bezier(.2,.9,.3,1.6),background .2s,border-color .2s}
+.tick:hover{transform:scale(1.08)}
+.tick[aria-pressed="true"]{background:var(--fill);border-color:transparent;box-shadow:0 0 16px -2px var(--accent)}
+.tick svg{width:16px;height:16px;opacity:0;transform:scale(.4);transition:.25s cubic-bezier(.2,.9,.3,1.6)}
+.tick[aria-pressed="true"] svg{opacity:1;transform:scale(1)}
+.tick:focus-visible{outline:2px solid var(--accentText);outline-offset:2px}
+.week{display:flex;gap:4px;padding:12px 14px}
+.week div{flex:1;text-align:center;font-size:11px;color:var(--muted)}
+.week i{display:block;height:44px;border-radius:8px;background:rgba(255,255,255,.08);margin-bottom:4px;position:relative;overflow:hidden}
+.week i::after{content:"";position:absolute;left:0;right:0;bottom:0;height:var(--h,0%);background:var(--fill);transition:height .6s}
+.week .today{color:var(--text);font-weight:600}
+.msg{padding:14px 16px;color:var(--muted)}
+.msg b{color:var(--text)}
+.btn{appearance:none;border:1px solid var(--edge);background:rgba(255,255,255,.08);color:var(--text);font:600 12px/1 var(--font);padding:9px 12px;border-radius:999px;cursor:pointer}
+.btn:hover{background:rgba(255,255,255,.14)}
+.foot{display:flex;gap:8px;justify-content:center}
+@media (prefers-reduced-motion:reduce){.aurora i{animation:none}*{transition-duration:.01ms!important}}
+@media (hover:none){#lens{display:none}}
+</style>
+</head>
+<body data-theme="bloom">
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="lens" aria-hidden="true"></div>
+<main class="wrap">
+  <header class="glass">
+    <div>
+      <h1>Habit <span>Tracker</span></h1>
+      <small id="sub">Loading from your sheet…</small>
+    </div>
+    <div class="ring" aria-label="Progress today"><svg viewBox="0 0 70 70"><circle class="track" cx="35" cy="35" r="29" fill="none" stroke-width="7"/><circle class="val" id="ringVal" cx="35" cy="35" r="29" fill="none" stroke-width="7" stroke-linecap="round" stroke-dasharray="182.2" stroke-dashoffset="182.2"/></svg><b id="pct">0%</b></div>
+  </header>
+  <section class="glass week" id="week" aria-label="Last 7 days"></section>
+  <section class="glass list" id="list" aria-label="Today's habits"></section>
+  <div class="foot"><button class="btn" id="refresh">Refresh</button></div>
+</main>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const THEME_KEY={"Windows Dark":"windows","Glow":"glow","Flow":"flow","Bloom":"bloom"};
+  const DAY0=5; // table column of day 1 (C=0 … H=5)
+  let habits=[]; let today=new Date(); let dayCount=31; let busy=false;
+
+  // liquid lens + sheen follow the pointer
+  const lens=$("lens");
+  document.addEventListener("pointermove",e=>{
+    lens.style.left=e.clientX+"px"; lens.style.top=e.clientY+"px"; lens.classList.add("on");
+    document.querySelectorAll(".glass").forEach(g=>{const r=g.getBoundingClientRect();g.style.setProperty("--mx",(e.clientX-r.left)+"px");g.style.setProperty("--my",(e.clientY-r.top)+"px")});
+  });
+  document.addEventListener("pointerleave",()=>lens.classList.remove("on"));
+
+  function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+  function isOn(v){return v===true||v==="TRUE"||v===1}
+
+  async function load(){
+    await Excel.run(async ctx=>{
+      const ws=ctx.workbook.worksheets.getItem("Tracker");
+      const t=ws.tables.getItem("tblTracker");
+      const body=t.getDataBodyRange(); body.load("values");
+      let theme=ctx.workbook.names.getItemOrNullObject("TrackerTheme"); theme.load("formula");
+      await ctx.sync();
+      const th=theme.isNullObject?"Bloom":String(theme.formula).replace(/^=|"/g,"");
+      document.body.dataset.theme=THEME_KEY[th]||"bloom";
+      habits=body.values.map((r,i)=>({row:i,name:r[0],cat:r[1],goal:r[2],days:r.slice(DAY0,DAY0+31).map(isOn)})).filter(h=>String(h.name).trim()!=="");
+    });
+    today=new Date(); dayCount=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+    render();
+  }
+
+  function streak(h){let s=0;for(let d=today.getDate();d>=1;d--){if(h.days[d-1])s++;else if(d!==today.getDate())break}return s}
+
+  function render(){
+    const d=today.getDate(), done=habits.filter(h=>h.days[d-1]).length, n=habits.length||1;
+    const pct=Math.round(done/n*100);
+    $("pct").textContent=pct+"%"; $("ringVal").style.strokeDashoffset=182.2*(1-done/n);
+    $("sub").textContent=today.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})+" · "+done+" of "+habits.length+" done";
+    let w="";
+    for(let k=6;k>=0;k--){const day=d-k; if(day<1) continue;
+      const c=habits.filter(h=>h.days[day-1]).length/n*100;
+      const lbl=new Date(today.getFullYear(),today.getMonth(),day).toLocaleDateString(undefined,{weekday:"narrow"});
+      w+='<div class="'+(k===0?"today":"")+'"><i style="--h:'+c+'%"></i>'+lbl+" "+day+"</div>"}
+    $("week").innerHTML=w;
+    $("list").innerHTML=habits.map((h,i)=>{const on=h.days[d-1], s=streak(h);
+      return '<div class="row" data-i="'+i+'"><button class="tick" aria-pressed="'+on+'" aria-label="'+esc(h.name)+' done today"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="#0b0b14" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
+        '<div class="name"><strong>'+esc(h.name)+'</strong><small>'+esc([h.cat,h.goal].filter(Boolean).join(" · "))+'</small></div>'+
+        (s?'<span class="streak">'+s+' day'+(s>1?"s":"")+'</span>':"")+"</div>"}).join("")||'<p class="msg">No habits found in the <b>tblTracker</b> table.</p>';
+  }
+
+  async function toggle(i){
+    if(busy) return; busy=true;
+    const h=habits[i], d=today.getDate(), v=!h.days[d-1];
+    h.days[d-1]=v; render();
+    try{
+      await Excel.run(async ctx=>{
+        const t=ctx.workbook.worksheets.getItem("Tracker").tables.getItem("tblTracker");
+        t.getDataBodyRange().getCell(h.row,DAY0+d-1).values=[[v]];
+        await ctx.sync();
+      });
+    }catch(e){h.days[d-1]=!v; render(); showErr(e)}
+    busy=false;
+  }
+
+  function showErr(e){$("list").insertAdjacentHTML("afterbegin",'<p class="msg">Couldn’t reach the sheet: '+esc(e&&e.message||e)+"</p>")}
+
+  $("list").addEventListener("click",e=>{const r=e.target.closest(".row"); if(r) toggle(+r.dataset.i)});
+  $("refresh").onclick=()=>load().catch(showErr);
+
+  Office.onReady(async info=>{
+    if(info.host!==Office.HostType.Excel){$("sub").textContent="Open this panel inside Excel.";return}
+    try{
+      await load();
+      await Excel.run(async ctx=>{ctx.workbook.worksheets.getItem("Tracker").onChanged.add(()=>{if(!busy) load().catch(()=>{})}); await ctx.sync()});
+    }catch(e){$("sub").textContent="Open Habit Tracker.xlsm to use this panel."; showErr(e)}
+  });
+})();
+</script>
+</body>
+</html>
